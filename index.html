@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#1F4E5F" />
+<title>소화기 점검 관리</title>
+<style>
+  :root{
+    --slate:#1F4E5F; --slate-d:#16323d;
+    --red:#C0392B; --red-d:#962d22;
+    --green:#2E7D52; --amber:#B8860B;
+    --bg:#EEF1F3; --card:#FFFFFF; --ink:#1B2A30; --muted:#6B7C84;
+    --line:#E2E8EB; --line-2:#EDF1F3;
+    --shadow:0 1px 2px rgba(20,50,61,.06), 0 8px 24px rgba(20,50,61,.06);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Segoe UI",sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px; margin:0 auto; min-height:100vh; background:var(--bg); position:relative;
+        display:flex; flex-direction:column; box-shadow:0 0 0 1px rgba(20,50,61,.04)}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  input,select{font-family:inherit; font-size:16px}
+  .hidden{display:none !important}
+
+  /* ---------- 로그인 ---------- */
+  #login{flex:1; display:flex; flex-direction:column; justify-content:center; padding:32px 28px;
+         background:linear-gradient(170deg,#1F4E5F 0%, #16323d 100%); color:#fff; min-height:100vh}
+  .brand{display:flex; align-items:center; gap:12px; margin-bottom:6px}
+  .brand .mark{width:44px;height:44px;border-radius:13px;background:var(--red);display:grid;place-items:center;
+               box-shadow:0 6px 16px rgba(192,57,43,.4)}
+  .brand .mark svg{width:24px;height:24px}
+  .brand h1{font-size:21px; margin:0; letter-spacing:-.3px; font-weight:800}
+  #login .sub{color:#A9C2CC; font-size:13.5px; margin:2px 0 38px 56px}
+  .field{margin-bottom:14px}
+  .field label{display:block; font-size:12.5px; color:#9FB9C3; margin:0 0 7px 2px; font-weight:600}
+  .field input{width:100%; padding:14px 15px; border-radius:13px; border:1px solid rgba(255,255,255,.16);
+               background:rgba(255,255,255,.07); color:#fff; outline:none}
+  .field input::placeholder{color:#7e98a2}
+  .field input:focus{border-color:var(--red); background:rgba(255,255,255,.1)}
+  .btn-primary{width:100%; padding:15px; border-radius:13px; background:var(--red); color:#fff;
+               font-weight:800; font-size:15.5px; margin-top:10px; transition:transform .05s, background .15s}
+  .btn-primary:active{transform:scale(.985); background:var(--red-d)}
+  .login-note{margin-top:22px; font-size:12px; color:#8fa9b3; text-align:center; line-height:1.6}
+  .pill-demo{display:inline-block; background:rgba(255,255,255,.12); padding:3px 9px; border-radius:20px;
+             font-size:11px; color:#cfe0e6; font-weight:600}
+
+  /* ---------- 상단 헤더 ---------- */
+  header{position:sticky; top:0; z-index:30; background:var(--slate); color:#fff;
+         padding:13px 16px 14px; box-shadow:0 2px 10px rgba(20,50,61,.16)}
+  .hd-top{display:flex; align-items:center; justify-content:space-between; gap:10px}
+  .team-sel{display:flex; align-items:center; gap:7px; background:rgba(255,255,255,.1);
+            padding:8px 11px; border-radius:11px; max-width:62%}
+  .team-sel svg{width:15px;height:15px;flex:0 0 auto;opacity:.85}
+  .team-sel select{background:transparent; border:none; color:#fff; font-weight:700; font-size:15px;
+                   outline:none; max-width:100%; text-overflow:ellipsis}
+  .team-sel select option{color:#1B2A30}
+  .hd-date{font-size:12px; color:#B7CCD4; text-align:right; line-height:1.3; font-weight:600}
+
+  .progress{display:flex; align-items:center; gap:14px; margin-top:13px;
+            background:rgba(255,255,255,.07); border-radius:14px; padding:12px 14px}
+  .ring{position:relative; width:60px; height:60px; flex:0 0 auto}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .ring-txt{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+                  justify-content:center; line-height:1}
+  .ring .ring-txt b{font-size:16px; font-weight:800}
+  .ring .ring-txt span{font-size:9px; color:#B7CCD4; margin-top:2px}
+  .prog-meta{flex:1}
+  .prog-meta .big{font-size:15px; font-weight:800}
+  .prog-meta .small{font-size:12.5px; color:#B7CCD4; margin-top:3px}
+  .prog-meta .miss{color:#FFD7A0; font-weight:700}
+
+  /* ---------- 본문 ---------- */
+  main{flex:1; padding:14px 14px 92px}
+  .view{display:none} .view.active{display:block}
+
+  .chips{display:flex; gap:8px; margin-bottom:13px}
+  .chip{flex:1; text-align:center; padding:9px 6px; border-radius:11px; background:var(--card);
+        border:1px solid var(--line); font-size:13px; font-weight:700; color:var(--muted)}
+  .chip.on{background:var(--slate); color:#fff; border-color:var(--slate)}
+  .chip .n{display:block; font-size:11px; font-weight:600; opacity:.8; margin-top:1px}
+
+  .row{background:var(--card); border:1px solid var(--line); border-radius:14px; margin-bottom:9px;
+       overflow:hidden; box-shadow:var(--shadow)}
+  .row-head{display:flex; align-items:center; gap:12px; padding:13px 14px}
+  .dot{width:11px;height:11px;border-radius:50%; background:#CFD8DC; flex:0 0 auto}
+  .row.done .dot{background:var(--green)}
+  .row.flag .dot{background:var(--amber)}
+  .row-id{font-weight:800; font-size:15px; letter-spacing:.2px}
+  .row-loc{font-size:12.5px; color:var(--muted); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .row-main{flex:1; min-width:0}
+  .row-state{font-size:11.5px; font-weight:700; color:var(--muted); text-align:right; flex:0 0 auto}
+  .row.done .row-state{color:var(--green)}
+  .row.flag .row-state{color:var(--amber)}
+  .row-state .t{display:block; font-weight:600; color:var(--muted); font-size:10.5px; margin-top:2px}
+  .thumb-mini{width:34px;height:34px;border-radius:8px;object-fit:cover;flex:0 0 auto;border:1px solid var(--line)}
+  .chev{width:16px;height:16px;color:#B0BEC5;flex:0 0 auto;transition:transform .2s}
+  .row.open .chev{transform:rotate(180deg)}
+
+  .panel{border-top:1px solid var(--line-2); padding:14px; display:none; background:#FAFCFD}
+  .row.open .panel{display:block}
+  .cam-btn{width:100%; padding:30px 12px; border:2px dashed #BcceD6; border-radius:13px; background:#fff;
+           display:flex; flex-direction:column; align-items:center; gap:8px; color:var(--slate); font-weight:700}
+  .cam-btn svg{width:30px;height:30px}
+  .cam-btn small{font-weight:500; color:var(--muted); font-size:11.5px}
+  .shot{position:relative; border-radius:13px; overflow:hidden; border:1px solid var(--line)}
+  .shot img{width:100%; display:block; max-height:240px; object-fit:cover}
+  .shot .retake{position:absolute; right:10px; bottom:10px; background:rgba(22,50,61,.82); color:#fff;
+                padding:7px 13px; border-radius:20px; font-size:12px; font-weight:700; backdrop-filter:blur(4px)}
+  .seg{display:flex; gap:8px; margin:13px 0 4px}
+  .seg button{flex:1; padding:11px; border-radius:11px; border:1.5px solid var(--line); background:#fff;
+              font-weight:700; font-size:13.5px; color:var(--muted)}
+  .seg button.sel-ok{border-color:var(--green); background:#EAF5EF; color:var(--green)}
+  .seg button.sel-flag{border-color:var(--amber); background:#FBF3E0; color:var(--amber)}
+  .memo{width:100%; margin-top:11px; padding:11px 13px; border-radius:11px; border:1px solid var(--line);
+        background:#fff; resize:none; font-size:14px; color:var(--ink)}
+  .complete{width:100%; margin-top:12px; padding:14px; border-radius:12px; background:var(--green); color:#fff;
+            font-weight:800; font-size:15px; display:flex; align-items:center; justify-content:center; gap:8px}
+  .complete:active{background:#256443}
+  .complete svg{width:17px;height:17px}
+
+  .floatbar{position:fixed; left:0; right:0; bottom:64px; max-width:480px; margin:0 auto; padding:0 14px;
+            pointer-events:none; z-index:25}
+  .floatbar button{pointer-events:auto; width:100%; padding:13px; border-radius:13px; background:var(--slate);
+            color:#fff; font-weight:700; font-size:14px; box-shadow:0 8px 22px rgba(20,50,61,.28);
+            display:flex; align-items:center; justify-content:center; gap:8px}
+  .floatbar svg{width:17px;height:17px}
+
+  .done-all{text-align:center; padding:34px 18px; color:var(--green)}
+  .done-all svg{width:46px;height:46px}
+  .done-all .t{font-weight:800; font-size:17px; margin-top:10px}
+  .done-all .s{font-size:13px; color:var(--muted); margin-top:5px}
+
+  /* ---------- 평면도 ---------- */
+  .map-card{background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:var(--shadow)}
+  .map-card .cap{padding:13px 15px; display:flex; align-items:center; justify-content:space-between}
+  .map-card .cap b{font-size:15px}
+  .map-card .cap span{font-size:12px; color:var(--muted)}
+  .map-img-box{position:relative; background:#F4F6F7; cursor:zoom-in; border-top:1px solid var(--line-2)}
+  .map-img-box img{width:100%; display:block}
+  .map-fallback{padding:46px 22px; text-align:center; color:var(--muted)}
+  .map-fallback svg{width:40px;height:40px;opacity:.5}
+  .map-fallback .t{font-weight:700; color:var(--slate); margin-top:12px; font-size:14px}
+  .map-fallback .s{font-size:12px; margin-top:6px; line-height:1.6}
+  .zoom-hint{position:absolute; right:12px; top:12px; background:rgba(22,50,61,.8); color:#fff;
+             padding:6px 11px; border-radius:20px; font-size:11px; font-weight:700}
+
+  /* ---------- 보고서 ---------- */
+  .rep-ctrl{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:13px; box-shadow:var(--shadow)}
+  .rep-row{display:flex; gap:10px; margin-bottom:11px}
+  .rep-row:last-child{margin-bottom:0}
+  .rep-field{flex:1}
+  .rep-field label{display:block; font-size:11.5px; color:var(--muted); font-weight:700; margin:0 0 6px 2px}
+  .rep-field input,.rep-field select{width:100%; padding:11px 12px; border-radius:11px; border:1px solid var(--line); background:#fff; color:var(--ink); outline:none}
+  .rep-field input:focus,.rep-field select:focus{border-color:var(--slate)}
+
+  .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-bottom:14px}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:13px; padding:13px 8px; text-align:center; box-shadow:var(--shadow)}
+  .stat b{display:block; font-size:21px; font-weight:800; letter-spacing:-.5px}
+  .stat span{font-size:11px; color:var(--muted); font-weight:600}
+  .stat.r b{color:var(--red)} .stat.g b{color:var(--green)} .stat.s b{color:var(--slate)}
+
+  .rep-list{background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; box-shadow:var(--shadow)}
+  .rep-item{display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid var(--line-2)}
+  .rep-item:last-child{border-bottom:none}
+  .rep-thumb{width:46px;height:46px;border-radius:9px;object-fit:cover;flex:0 0 auto;border:1px solid var(--line)}
+  .rep-thumb.empty{background:#F0F3F4; display:grid; place-items:center; color:#9FB1B8}
+  .rep-thumb.empty svg{width:18px;height:18px}
+  .rep-info{flex:1; min-width:0}
+  .rep-info .id{font-weight:800; font-size:14px}
+  .rep-info .loc{font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .rep-info .meta{font-size:11px; color:#90A4AE; margin-top:2px}
+  .rep-badge{font-size:11px; font-weight:800; padding:4px 9px; border-radius:7px; flex:0 0 auto}
+  .rep-badge.ok{background:#EAF5EF; color:var(--green)}
+  .rep-badge.flag{background:#FBF3E0; color:var(--amber)}
+  .rep-badge.miss{background:#FBE9E7; color:var(--red)}
+  .rep-empty{padding:40px 20px; text-align:center; color:var(--muted); font-size:13px}
+  .pdf-btn{width:100%; margin-top:13px; padding:14px; border-radius:12px; background:var(--red); color:#fff;
+           font-weight:800; font-size:15px; display:flex; align-items:center; justify-content:center; gap:8px}
+  .pdf-btn:active{background:var(--red-d)}
+  .pdf-btn svg{width:17px;height:17px}
+
+  /* ---------- 설정 ---------- */
+  .set-card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:4px 0; margin-bottom:13px; box-shadow:var(--shadow); overflow:hidden}
+  .set-item{padding:15px 16px; border-bottom:1px solid var(--line-2); display:flex; align-items:center; gap:13px}
+  .set-item:last-child{border-bottom:none}
+  .set-item svg{width:19px;height:19px;color:var(--slate);flex:0 0 auto}
+  .set-item .txt{flex:1}
+  .set-item .txt b{font-size:14px; display:block}
+  .set-item .txt span{font-size:12px; color:var(--muted)}
+  .set-item .go{color:#B0BEC5; font-size:13px; font-weight:700}
+  .badge-mode{display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px}
+  .badge-mode.demo{background:#FBF3E0; color:var(--amber)}
+  .badge-mode.live{background:#EAF5EF; color:var(--green)}
+  .set-note{font-size:12px; color:var(--muted); line-height:1.7; padding:2px 6px 0}
+  .logout{width:100%; padding:14px; border-radius:12px; border:1.5px solid var(--line); background:#fff;
+          color:var(--red); font-weight:800; font-size:14px; margin-top:6px}
+
+  .section-title{font-size:12px; font-weight:800; color:var(--muted); text-transform:none;
+                 margin:4px 4px 9px; letter-spacing:.2px}
+
+  /* ---------- 하단 탭 ---------- */
+  nav.tabs{position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto; background:#fff;
+           border-top:1px solid var(--line); display:flex; z-index:30; padding-bottom:env(safe-area-inset-bottom)}
+  nav.tabs button{flex:1; padding:9px 0 11px; display:flex; flex-direction:column; align-items:center; gap:3px;
+                  color:var(--muted); font-size:10.5px; font-weight:700}
+  nav.tabs button svg{width:21px;height:21px}
+  nav.tabs button.on{color:var(--slate)}
+  nav.tabs button.on svg{color:var(--red)}
+
+  /* ---------- 줌 모달 / 토스트 ---------- */
+  .modal{position:fixed; inset:0; background:rgba(15,30,36,.94); z-index:60; display:none;
+         align-items:center; justify-content:center; padding:14px}
+  .modal.show{display:flex}
+  .modal img{max-width:100%; max-height:88vh; border-radius:8px}
+  .modal .close{position:absolute; top:16px; right:18px; color:#fff; font-size:30px; font-weight:300; line-height:1}
+  .toast{position:fixed; bottom:84px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink);
+         color:#fff; padding:12px 20px; border-radius:24px; font-size:13px; font-weight:600; z-index:80;
+         opacity:0; pointer-events:none; transition:.25s; max-width:90%; box-shadow:0 8px 24px rgba(0,0,0,.25)}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  /* ---------- 인쇄(PDF) ---------- */
+  #print-area{display:none}
+  @media print{
+    body *{visibility:hidden}
+    #print-area, #print-area *{visibility:visible}
+    #print-area{display:block; position:absolute; left:0; top:0; width:100%; padding:24px}
+    .wrap{box-shadow:none}
+  }
+  #print-area{font-family:inherit; color:#1B2A30}
+  #print-area h2{color:var(--slate); margin:0 0 4px; font-size:20px}
+  #print-area .p-sub{color:#6B7C84; font-size:12px; margin-bottom:18px}
+  #print-area table{width:100%; border-collapse:collapse; font-size:11.5px}
+  #print-area th{background:var(--slate); color:#fff; padding:8px 9px; text-align:left; font-weight:700}
+  #print-area td{padding:7px 9px; border-bottom:1px solid #E2E8EB}
+  #print-area .p-stat{display:flex; gap:24px; margin-bottom:18px; padding:14px 16px; background:#F4F6F7; border-radius:10px}
+  #print-area .p-stat div b{display:block; font-size:20px; color:var(--slate)}
+  #print-area .p-stat div span{font-size:11px; color:#6B7C84}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===================== 로그인 ===================== -->
+  <section id="login">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2c1 3-1 4-1 6a2 2 0 104 0c0-1 0-1.5-.3-2.2C17 8 18 10.5 18 13a6 6 0 11-12 0c0-3 2-5 3-7 .5 1 1 1.7 1 2.5C10 7 11 5 12 2z" fill="#fff"/></svg>
+      </div>
+      <div>
+        <h1>소화기 점검 관리</h1>
+      </div>
+    </div>
+    <div class="sub">현장에서 찍고 · 체크하고 · 보고서로 끝내기</div>
+
+    <div class="field">
+      <label>담당자 ID</label>
+      <input id="in-id" type="text" placeholder="예: 황의영 / kim.es" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label>비밀번호</label>
+      <input id="in-pw" type="password" placeholder="비밀번호" autocomplete="current-password" />
+    </div>
+    <button class="btn-primary" id="btn-login">로그인</button>
+    <div class="login-note">
+      <span class="pill-demo">데모 모드</span><br/>
+      아이디·비밀번호 아무거나 입력하면 둘러볼 수 있습니다.<br/>
+      실제 인증은 Supabase 연결 후 동작합니다.
+    </div>
+  </section>
+
+  <!-- ===================== 앱 본체 ===================== -->
+  <div id="app" class="hidden">
+    <header>
+      <div class="hd-top">
+        <div class="team-sel">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 7h18M3 12h18M3 17h18" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+          <select id="team-select"></select>
+        </div>
+        <div class="hd-date" id="hd-date"></div>
+      </div>
+      <div class="progress">
+        <div class="ring">
+          <svg width="60" height="60" viewBox="0 0 60 60">
+            <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="7"/>
+            <circle id="ring-fg" cx="30" cy="30" r="26" fill="none" stroke="#C0392B" stroke-width="7"
+                    stroke-linecap="round" stroke-dasharray="163.4" stroke-dashoffset="163.4"/>
+          </svg>
+          <div class="ring-txt"><b id="ring-num">0/0</b><span>점검</span></div>
+        </div>
+        <div class="prog-meta">
+          <div class="big" id="prog-big">이번 달 점검 현황</div>
+          <div class="small" id="prog-small">팀을 선택하세요</div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- 점검 -->
+      <section class="view active" id="view-check">
+        <div class="chips">
+          <button class="chip on" data-filter="all">전체 <span class="n" id="c-all">0</span></button>
+          <button class="chip" data-filter="todo">미점검 <span class="n" id="c-todo">0</span></button>
+          <button class="chip" data-filter="done">완료 <span class="n" id="c-done">0</span></button>
+        </div>
+        <div id="list"></div>
+      </section>
+
+      <!-- 평면도 -->
+      <section class="view" id="view-map">
+        <div class="section-title">소화기 위치도</div>
+        <div class="map-card">
+          <div class="cap"><b id="map-team">-</b><span id="map-count"></span></div>
+          <div class="map-img-box" id="map-box">
+            <span class="zoom-hint">탭하면 확대</span>
+            <img id="map-img" alt="소화기 위치도" />
+          </div>
+        </div>
+        <div class="set-note" style="margin-top:12px">
+          이 이미지는 <b>data/평면도_팀명.png</b> 파일을 불러옵니다. 각 팀 담당자가 본인 라인 평면도(PPT로 작성 → 캡처)로 교체하면 됩니다.
+        </div>
+      </section>
+
+      <!-- 보고서 -->
+      <section class="view" id="view-report">
+        <div class="section-title">점검 이력 보고서</div>
+        <div class="rep-ctrl">
+          <div class="rep-row">
+            <div class="rep-field"><label>시작 월</label><input type="month" id="rep-from" /></div>
+            <div class="rep-field"><label>종료 월</label><input type="month" id="rep-to" /></div>
+          </div>
+          <div class="rep-row">
+            <div class="rep-field"><label>팀</label><select id="rep-team"></select></div>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat s"><b id="st-target">0</b><span>대상</span></div>
+          <div class="stat g"><b id="st-done">0</b><span>점검</span></div>
+          <div class="stat r"><b id="st-miss">0</b><span>누락</span></div>
+          <div class="stat s"><b id="st-rate">0%</b><span>점검률</span></div>
+        </div>
+        <div class="rep-list" id="rep-list"></div>
+        <button class="pdf-btn" id="btn-pdf">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          PDF로 저장 / 인쇄
+        </button>
+      </section>
+
+      <!-- 설정 -->
+      <section class="view" id="view-settings">
+        <div class="section-title">데이터 관리 (회사 PC 권장)</div>
+        <div class="set-card">
+          <label class="set-item" for="up-master" style="cursor:pointer">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h10l6 6v10H4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 4v6h6" stroke="currentColor" stroke-width="1.8"/></svg>
+            <div class="txt"><b>마스터 엑셀 업로드</b><span>팀·소화기·위치 목록 불러오기</span></div>
+            <span class="go">선택 ›</span>
+          </label>
+          <input id="up-master" type="file" accept=".xlsx,.xls" hidden />
+          <div class="set-item">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3 5h18v14H3z" stroke="currentColor" stroke-width="1.8"/><path d="M3 16l5-5 4 4 3-3 6 6" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8" cy="9" r="1.5" fill="currentColor"/></svg>
+            <div class="txt"><b>평면도 이미지</b><span>data/ 폴더의 팀별 png 교체</span></div>
+            <span class="go">레포에서 ›</span>
+          </div>
+        </div>
+
+        <div class="section-title">연결 상태</div>
+        <div class="set-card">
+          <div class="set-item">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z" stroke="currentColor" stroke-width="1.8"/><path d="M2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20" stroke="currentColor" stroke-width="1.5"/></svg>
+            <div class="txt"><b>저장소</b><span id="mode-desc">로컬 데모 (새로고침 시 초기화)</span></div>
+            <span class="badge-mode demo" id="mode-badge">DEMO</span>
+          </div>
+        </div>
+        <div class="set-note">
+          현재는 <b>데모 모드</b>입니다. index.html 상단의 <b>CONFIG</b>에 Supabase 주소·키를 넣으면
+          사진·점검 이력이 실제로 저장되고 팀별 로그인이 동작합니다. 자세한 방법은 함께 받은 배포 가이드를 참고하세요.
+        </div>
+        <button class="logout" id="btn-logout">로그아웃</button>
+      </section>
+    </main>
+
+    <div class="floatbar hidden" id="floatbar">
+      <button id="btn-goto-map">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 3v15M15 6v15" stroke="#fff" stroke-width="1.8"/></svg>
+        평면도에서 위치 확인
+      </button>
+    </div>
+
+    <nav class="tabs">
+      <button class="on" data-view="check">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L20 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7H3V5h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        점검
+      </button>
+      <button data-view="map">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 3v15M15 6v15" stroke="currentColor" stroke-width="1.8"/></svg>
+        평면도
+      </button>
+      <button data-view="report">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 3h10l4 4v14H5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v4h4M8 13h8M8 17h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        보고서
+      </button>
+      <button data-view="settings">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M19 12a7 7 0 00-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 00-1.7-1l-.3-2.5h-4l-.3 2.5a7 7 0 00-1.7 1l-2.4-1-2 3.5L5.1 11a7 7 0 000 2l-2 1.5 2 3.5 2.4-1a7 7 0 001.7 1l.3 2.5h4l.3-2.5a7 7 0 001.7-1l2.4 1 2-3.5-2-1.5c.1-.3.1-.7.1-1z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        설정
+      </button>
+    </nav>
+  </div>
+
+  <input id="cam" type="file" accept="image/*" capture="environment" hidden />
+  <div class="modal" id="zoom"><span class="close" id="zoom-close">&times;</span><img id="zoom-img" /></div>
+  <div class="toast" id="toast"></div>
+  <div id="print-area"></div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG — 실서비스로 전환하려면 아래 두 값을 채우세요.
+   (비워두면 자동으로 '데모 모드'로 동작합니다)
+   ============================================================ */
+const CONFIG = {
+  SUPABASE_URL: "",          // 예: https://abcd.supabase.co
+  SUPABASE_ANON_KEY: "",     // 예: eyJhbGciOi...
+  BUCKET: "inspection-photos"
+};
+
+/* ---------- 데모용 마스터 데이터 (배포 시 data/소화기_마스터.xlsx 가 우선) ---------- */
+const DEMO_TEAMS = {
+  "주사제팀":[["A-01","주사제 1라인 출입구 좌측","분말(ABC)"],["A-02","1라인 충전실 A132호 앞","분말(ABC)"],["A-03","1라인 포장실 입구","분말(ABC)"],["A-04","2라인 출입구 우측","분말(ABC)"],["A-05","2라인 세척실 앞","CO2"],["A-06","2라인 동결건조실 앞","분말(ABC)"],["A-07","무균충전실 A201호 전실","분말(ABC)"],["A-08","무균충전실 A202호 전실","분말(ABC)"],["A-09","계단실 1층 (동측)","분말(ABC)"],["A-10","계단실 2층 (동측)","분말(ABC)"],["A-11","QC 시험실 입구","분말(ABC)"],["A-12","자재 입고장 셔터 옆","분말(ABC)"],["A-13","탈의실 복도 끝","분말(ABC)"],["A-14","전기실 출입문 좌측","CO2"],["A-15","유틸리티실 보일러 앞","분말(ABC)"],["A-16","완제품 창고 A동 입구","분말(ABC)"],["A-17","완제품 창고 A동 중앙","분말(ABC)"],["A-18","사무실 출입구","분말(ABC)"],["A-19","휴게실 자판기 옆","분말(ABC)"],["A-20","옥상 출입문 앞","분말(ABC)"]],
+  "원액생산팀":[["B-01","배양동 1층 출입구","분말(ABC)"],["B-02","배양실 B-101 앞","분말(ABC)"],["B-03","배양실 B-102 앞","분말(ABC)"],["B-04","정제실 입구 좌측","분말(ABC)"],["B-05","정제실 크로마토그래피","CO2"],["B-06","버퍼 조제실 앞","분말(ABC)"],["B-07","배지 조제실 앞","분말(ABC)"],["B-08","원액 저장실 전실","분말(ABC)"],["B-09","계단실 1층 (서측)","분말(ABC)"],["B-10","유틸리티 펌프실","분말(ABC)"],["B-11","전기실 입구","CO2"],["B-12","자재 보관실 입구","분말(ABC)"]],
+  "식당동":[["F-01","식당 출입구","분말(ABC)"],["F-02","주방 입구 (홀측)","K급(주방)"],["F-03","주방 튀김기 구역","K급(주방)"],["F-04","주방 가스레인지 옆","K급(주방)"],["F-05","배식대 끝","분말(ABC)"],["F-06","식자재 창고 입구","분말(ABC)"],["F-07","냉동/냉장고 전실","분말(ABC)"],["F-08","계단실","분말(ABC)"]]
+};
+
+/* ============================================================
+   백엔드 추상화: 데모(메모리) ↔ Supabase
+   ============================================================ */
+const state = { mode:"demo", user:null, team:null, teams:{}, inspections:[], filter:"all", sb:null, pending:{} };
+
+function ym(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); }
+function monthKey(ts){ const d=new Date(ts); return ym(d); }
+function fmtDateTime(ts){ const d=new Date(ts); const p=n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+
+const Backend = {
+  async init(){
+    if(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY){
+      try{
+        await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js");
+        state.sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        state.mode = "supabase";
+      }catch(e){ console.warn("Supabase 로드 실패 → 데모 모드", e); state.mode="demo"; }
+    }
+  },
+  async signIn(id, pw){
+    if(state.mode==="supabase"){
+      const { data, error } = await state.sb.auth.signInWithPassword({ email:id, password:pw });
+      if(error) throw error;
+      return data.user.email;
+    }
+    return id; // 데모: 입력 ID를 점검자명으로
+  },
+  async loadMaster(){
+    // 1) 배포 환경: 레포의 엑셀을 직접 파싱
+    try{
+      const res = await fetch("data/소화기_마스터.xlsx", {cache:"no-store"});
+      if(res.ok && typeof XLSX!=="undefined"){
+        const buf = await res.arrayBuffer();
+        const parsed = parseWorkbook(buf);
+        if(Object.keys(parsed).length){ return parsed; }
+      }
+    }catch(e){ /* 데모/미배포 시 무시 */ }
+    // 2) Supabase 마스터 테이블
+    if(state.mode==="supabase"){
+      const { data } = await state.sb.from("extinguishers").select("*").order("ext_id");
+      if(data && data.length){
+        const m={}; data.forEach(r=>{ (m[r.team]=m[r.team]||[]).push([r.ext_id, r.location, r.type]); });
+        return m;
+      }
+    }
+    // 3) 데모 데이터
+    return JSON.parse(JSON.stringify(DEMO_TEAMS));
+  },
+  async loadInspections(){
+    if(state.mode==="supabase"){
+      const { data } = await state.sb.from("inspections").select("*").order("ts",{ascending:false});
+      return (data||[]).map(r=>({ team:r.team, extId:r.ext_id, ts:r.ts, inspector:r.inspector, status:r.status, note:r.note, photo:r.photo_url }));
+    }
+    return state.inspections;
+  },
+  async saveInspection(rec, file){
+    if(state.mode==="supabase"){
+      let url=null;
+      if(file){
+        const path = `${rec.team}/${rec.extId}_${Date.now()}.jpg`;
+        const { error:upErr } = await state.sb.storage.from(CONFIG.BUCKET).upload(path, file, {upsert:true});
+        if(upErr) throw upErr;
+        url = state.sb.storage.from(CONFIG.BUCKET).getPublicUrl(path).data.publicUrl;
+      }
+      const row = { team:rec.team, ext_id:rec.extId, ts:rec.ts, inspector:rec.inspector, status:rec.status, note:rec.note, photo_url:url };
+      const { error } = await state.sb.from("inspections").insert(row);
+      if(error) throw error;
+      rec.photo = url;
+    }
+    state.inspections = state.inspections.filter(r=> !(r.team===rec.team && r.extId===rec.extId && monthKey(r.ts)===monthKey(rec.ts)));
+    state.inspections.unshift(rec);
+  }
+};
+
+function parseWorkbook(buf){
+  const wb = XLSX.read(buf, {type:"array"});
+  const map={};
+  wb.SheetNames.filter(n=>!n.startsWith("_")).forEach(name=>{
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:""});
+    const items = rows.filter(r=> (r["관리번호"]||"").toString().trim())
+      .map(r=>[ String(r["관리번호"]).trim(), String(r["위치"]||"").trim(), String(r["소화기종류"]||"").trim() ]);
+    if(items.length) map[name]=items;
+  });
+  return map;
+}
+
+function loadScript(src){
+  return new Promise((ok,err)=>{ const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=err; document.head.appendChild(s); });
+}
+
+/* ============================================================
+   데모 시드: 보고서가 비어보이지 않도록 일부 점검 이력 생성
+   ============================================================ */
+function makeThumb(id, status){
+  const c=document.createElement("canvas"); c.width=120; c.height=120; const x=c.getContext("2d");
+  x.fillStyle="#1F4E5F"; x.fillRect(0,0,120,120);
+  x.fillStyle = status==="특이사항" ? "#B8860B" : "#2E7D52"; x.fillRect(0,96,120,24);
+  x.fillStyle="rgba(255,255,255,.12)"; x.fillRect(14,18,92,60);
+  x.fillStyle="#fff"; x.font="bold 22px sans-serif"; x.textAlign="center"; x.fillText(id,60,56);
+  x.font="11px sans-serif"; x.fillText("점검 사진", 60, 112);
+  return c.toDataURL("image/png");
+}
+function seedDemo(){
+  const team="주사제팀"; const items=DEMO_TEAMS[team];
+  const now=new Date();
+  const lastMonth=new Date(now.getFullYear(), now.getMonth()-1, 14, 10, 20);
+  // 지난 달: 전부 점검 완료
+  items.forEach((it,i)=>{
+    const t=new Date(lastMonth); t.setMinutes(20+i*3);
+    state.inspections.push({ team, extId:it[0], ts:t.getTime(), inspector:"황의영",
+      status: i===6?"특이사항":"정상", note: i===6?"호스 노후 — 교체 요청":"", photo:makeThumb(it[0], i===6?"특이사항":"정상") });
+  });
+  // 이번 달: 14개만 점검 (6개 누락 → '누락 위험' 데모)
+  for(let i=0;i<14;i++){
+    const it=items[i]; const t=new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate(), 3+i), 9, 15+i*2);
+    state.inspections.push({ team, extId:it[0], ts:t.getTime(), inspector:"황의영",
+      status:"정상", note:"", photo:makeThumb(it[0],"정상") });
+  }
+}
+
+/* ============================================================
+   렌더링
+   ============================================================ */
+const $=s=>document.querySelector(s);
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),1900); }
+
+function currentItems(){ return state.teams[state.team]||[]; }
+function thisMonthInspections(team){
+  const k=ym(new Date());
+  return state.inspections.filter(r=> r.team===team && monthKey(r.ts)===k);
+}
+function inspectionFor(extId){
+  const k=ym(new Date());
+  return state.inspections.find(r=> r.team===state.team && r.extId===extId && monthKey(r.ts)===k);
+}
+
+function renderHeader(){
+  const items=currentItems(); const done=thisMonthInspections(state.team);
+  const total=items.length, n=done.length, pct= total? n/total : 0;
+  const C=163.4;
+  $("#ring-fg").style.strokeDashoffset = C*(1-pct);
+  $("#ring-fg").style.stroke = (n>=total && total>0) ? "#3FB37F" : "#C0392B";
+  $("#ring-num").textContent = `${n}/${total}`;
+  $("#prog-big").textContent = (n>=total && total>0) ? "이번 달 점검 완료 🎉" : "이번 달 점검 현황";
+  const miss = total-n;
+  $("#prog-small").innerHTML = miss>0
+    ? `<span class="miss">${miss}개 미점검</span> · 완료 ${n}개`
+    : `전체 ${total}개 점검 완료`;
+}
+
+function statusBadge(r){
+  if(!r) return "";
+  return r.status==="특이사항" ? "특이사항" : "정상";
+}
+
+function renderList(){
+  const items=currentItems();
+  const counts={all:items.length, done:0, todo:0};
+  items.forEach(it=>{ inspectionFor(it[0]) ? counts.done++ : counts.todo++; });
+  $("#c-all").textContent=counts.all; $("#c-done").textContent=counts.done; $("#c-todo").textContent=counts.todo;
+
+  const filtered = items.filter(it=>{
+    const insp=inspectionFor(it[0]);
+    if(state.filter==="done") return !!insp;
+    if(state.filter==="todo") return !insp;
+    return true;
+  });
+
+  const list=$("#list"); list.innerHTML="";
+
+  if(filtered.length===0 && state.filter==="todo"){
+    list.innerHTML=`<div class="done-all">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#2E7D52" stroke-width="2"/><path d="M8 12l3 3 5-6" stroke="#2E7D52" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="t">미점검 소화기가 없습니다</div>
+      <div class="s">이번 달 ${state.team} 점검을 모두 마쳤어요.</div></div>`;
+    return;
+  }
+
+  filtered.forEach(it=>{
+    const [extId, loc, type]=it;
+    const insp=inspectionFor(extId);
+    const row=document.createElement("div");
+    row.className="row"+(insp? (insp.status==="특이사항"?" flag":" done"):"");
+    row.dataset.ext=extId;
+
+    const stateHtml = insp
+      ? `<div class="row-state">${statusBadge(insp)}<span class="t">${fmtDateTime(insp.ts).slice(5)}</span></div>`
+      : `<div class="row-state" style="color:#90A4AE">미점검</div>`;
+    const thumbMini = insp&&insp.photo ? `<img class="thumb-mini" src="${insp.photo}"/>` : "";
+
+    row.innerHTML=`
+      <div class="row-head">
+        <span class="dot"></span>
+        <div class="row-main">
+          <div class="row-id">${extId}</div>
+          <div class="row-loc">${loc}${type?` · ${type}`:""}</div>
+        </div>
+        ${thumbMini}
+        ${stateHtml}
+        <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="panel"></div>`;
+
+    row.querySelector(".row-head").addEventListener("click",()=>togglePanel(row, extId));
+    list.appendChild(row);
+  });
+}
+
+function togglePanel(row, extId){
+  const open=row.classList.contains("open");
+  document.querySelectorAll(".row.open").forEach(r=>{ if(r!==row){ r.classList.remove("open"); r.querySelector(".panel").innerHTML=""; }});
+  if(open){ row.classList.remove("open"); row.querySelector(".panel").innerHTML=""; return; }
+  row.classList.add("open");
+  renderPanel(row, extId);
+}
+
+function renderPanel(row, extId){
+  const insp=inspectionFor(extId);
+  const pend=state.pending[extId] || (insp ? {photo:insp.photo, status:insp.status, note:insp.note} : {photo:null, status:"정상", note:""});
+  state.pending[extId]=pend;
+  const panel=row.querySelector(".panel");
+
+  const shot = pend.photo
+    ? `<div class="shot"><img src="${pend.photo}"/><span class="retake" data-act="cam">다시 촬영</span></div>`
+    : `<button class="cam-btn" data-act="cam">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="13" rx="2.5" stroke="#1F4E5F" stroke-width="1.8"/><path d="M8 7l1.5-2.5h5L16 7" stroke="#1F4E5F" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13.5" r="3.5" stroke="#1F4E5F" stroke-width="1.8"/></svg>
+        점검 대장 사진 촬영
+        <small>휴대폰 카메라가 열립니다 · 증빙용</small>
+      </button>`;
+
+  panel.innerHTML=`
+    ${shot}
+    <div class="seg">
+      <button data-status="정상" class="${pend.status==="정상"?"sel-ok":""}">정상</button>
+      <button data-status="특이사항" class="${pend.status==="특이사항"?"sel-flag":""}">특이사항</button>
+    </div>
+    <textarea class="memo" rows="2" placeholder="비고 (선택) — 예: 압력게이지 정상, 봉인 양호">${pend.note||""}</textarea>
+    <button class="complete" data-act="save">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      ${insp? "점검 내용 수정" : "점검 완료"}
+    </button>`;
+
+  panel.querySelectorAll("[data-act='cam']").forEach(b=> b.addEventListener("click",()=>openCamera(extId, row)));
+  panel.querySelectorAll("[data-status]").forEach(b=> b.addEventListener("click",()=>{
+    pend.status=b.dataset.status; renderPanel(row, extId);
+  }));
+  panel.querySelector(".memo").addEventListener("input", e=> pend.note=e.target.value);
+  panel.querySelector("[data-act='save']").addEventListener("click",()=>saveItem(extId, row));
+}
+
+let camTarget=null, camRow=null;
+function openCamera(extId, row){ camTarget=extId; camRow=row; $("#cam").value=""; $("#cam").click(); }
+$("#cam").addEventListener("change", e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    state.pending[camTarget]=state.pending[camTarget]||{status:"정상",note:""};
+    state.pending[camTarget].photo=reader.result;
+    state.pending[camTarget]._file=file;
+    renderPanel(camRow, camTarget);
+  };
+  reader.readAsDataURL(file);
+});
+
+async function saveItem(extId, row){
+  const pend=state.pending[extId];
+  if(!pend.photo && !confirm("증빙 사진 없이 점검 완료로 기록할까요?")) return;
+  const rec={ team:state.team, extId, ts:Date.now(), inspector:state.user, status:pend.status||"정상", note:pend.note||"", photo:pend.photo||null };
+  const btn=row.querySelector(".complete"); if(btn){ btn.textContent="저장 중…"; btn.disabled=true; }
+  try{
+    await Backend.saveInspection(rec, pend._file);
+    delete state.pending[extId];
+    row.classList.remove("open"); row.querySelector(".panel").innerHTML="";
+    renderHeader(); renderList();
+    toast(`${extId} 점검 완료`);
+  }catch(err){
+    console.error(err); toast("저장 실패: "+(err.message||err));
+    if(btn){ btn.disabled=false; btn.textContent="점검 완료"; }
+  }
+}
+
+/* ---------- 평면도 ---------- */
+function renderMap(){
+  $("#map-team").textContent=state.team;
+  $("#map-count").textContent=`${currentItems().length}개`;
+  const box=$("#map-box"); box.innerHTML=`<span class="zoom-hint">탭하면 확대</span><img id="map-img" alt="소화기 위치도"/>`;
+  const img=$("#map-img");
+  img.onerror=()=>{
+    box.style.cursor="default";
+    box.innerHTML=`<div class="map-fallback">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3z" stroke="#9FB1B8" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 3v15M15 6v15" stroke="#9FB1B8" stroke-width="1.6"/></svg>
+      <div class="t">${state.team} 평면도 미리보기 없음</div>
+      <div class="s">데모에서는 표시되지 않습니다.<br/>배포 후 <b>data/평면도_${state.team}.png</b> 가 여기에 나타납니다.</div></div>`;
+  };
+  img.onload=()=> box.style.cursor="zoom-in";
+  img.onclick=()=>{ $("#zoom-img").src=img.src; $("#zoom").classList.add("show"); };
+  img.src=`data/평면도_${state.team}.png`;
+}
+$("#zoom-close").addEventListener("click",()=> $("#zoom").classList.remove("show"));
+$("#zoom").addEventListener("click", e=>{ if(e.target.id==="zoom") $("#zoom").classList.remove("show"); });
+
+/* ---------- 보고서 ---------- */
+function fillRepTeams(){
+  const sel=$("#rep-team"); sel.innerHTML="";
+  Object.keys(state.teams).forEach(t=>{ const o=document.createElement("option"); o.value=t; o.textContent=t; sel.appendChild(o); });
+  sel.value=state.team;
+}
+function renderReport(){
+  const team=$("#rep-team").value || state.team;
+  const from=$("#rep-from").value, to=$("#rep-to").value;
+  const items=state.teams[team]||[];
+  const inRange = r=>{
+    if(r.team!==team) return false;
+    const k=monthKey(r.ts);
+    if(from && k<from) return false;
+    if(to && k>to) return false;
+    return true;
+  };
+  // 기간 내, 소화기별 최신 점검 1건
+  const latest={};
+  state.inspections.filter(inRange).forEach(r=>{ if(!latest[r.extId] || r.ts>latest[r.extId].ts) latest[r.extId]=r; });
+
+  const target=items.length;
+  const doneList=items.map(it=>({it, r:latest[it[0]]}));
+  const done=doneList.filter(d=>d.r).length;
+  const miss=target-done;
+  $("#st-target").textContent=target; $("#st-done").textContent=done;
+  $("#st-miss").textContent=miss; $("#st-rate").textContent= target? Math.round(done/target*100)+"%":"0%";
+
+  const list=$("#rep-list"); list.innerHTML="";
+  if(target===0){ list.innerHTML=`<div class="rep-empty">대상 소화기가 없습니다.</div>`; return; }
+  doneList.forEach(({it, r})=>{
+    const [extId, loc]=it;
+    const el=document.createElement("div"); el.className="rep-item";
+    const thumb = r&&r.photo
+      ? `<img class="rep-thumb" src="${r.photo}"/>`
+      : `<div class="rep-thumb empty"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 16l5-4 4 3" stroke="currentColor" stroke-width="1.6"/></svg></div>`;
+    const badge = !r ? `<span class="rep-badge miss">누락</span>`
+      : r.status==="특이사항" ? `<span class="rep-badge flag">특이사항</span>`
+      : `<span class="rep-badge ok">정상</span>`;
+    const meta = r ? `${fmtDateTime(r.ts)} · ${r.inspector}${r.note?` · ${r.note}`:""}` : "기간 내 점검 기록 없음";
+    el.innerHTML=`${thumb}<div class="rep-info"><div class="id">${extId}</div><div class="loc">${loc}</div><div class="meta">${meta}</div></div>${badge}`;
+    if(r&&r.photo){ el.querySelector(".rep-thumb").style.cursor="zoom-in";
+      el.querySelector(".rep-thumb").addEventListener("click",()=>{ $("#zoom-img").src=r.photo; $("#zoom").classList.add("show"); }); }
+    list.appendChild(el);
+  });
+  state._repCtx={team, from, to, target, done, miss, doneList};
+}
+
+function buildPrint(){
+  const c=state._repCtx; if(!c) return;
+  const period = (c.from||"처음") + " ~ " + (c.to||"현재");
+  const rows=c.doneList.map(({it,r})=>{
+    const st = !r? "누락" : r.status;
+    return `<tr><td><b>${it[0]}</b></td><td>${it[1]}</td><td>${r?fmtDateTime(r.ts):"-"}</td><td>${r?r.inspector:"-"}</td><td>${st}</td><td>${r&&r.note?r.note:""}</td></tr>`;
+  }).join("");
+  $("#print-area").innerHTML=`
+    <h2>소화기 점검 이력 보고서</h2>
+    <div class="p-sub">${c.team} · 기간 ${period} · 출력일 ${fmtDateTime(Date.now())}</div>
+    <div class="p-stat">
+      <div><b>${c.target}</b><span>대상 소화기</span></div>
+      <div><b>${c.done}</b><span>점검 완료</span></div>
+      <div><b>${c.miss}</b><span>누락</span></div>
+      <div><b>${c.target?Math.round(c.done/c.target*100):0}%</b><span>점검률</span></div>
+    </div>
+    <table><thead><tr><th>관리번호</th><th>위치</th><th>점검일시</th><th>점검자</th><th>결과</th><th>비고</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+$("#btn-pdf").addEventListener("click",()=>{ buildPrint(); setTimeout(()=>window.print(),60); });
+
+/* ---------- 마스터 업로드 (설정) ---------- */
+$("#up-master").addEventListener("change", async e=>{
+  const file=e.target.files[0]; if(!file) return;
+  if(typeof XLSX==="undefined"){
+    try{ await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"); }
+    catch(err){ toast("엑셀 파서를 불러오지 못했습니다(오프라인)"); return; }
+  }
+  const buf=await file.arrayBuffer();
+  const parsed=parseWorkbook(buf);
+  if(!Object.keys(parsed).length){ toast("시트에서 데이터를 찾지 못했습니다"); return; }
+  state.teams=parsed;
+  fillTeamSelect(); fillRepTeams();
+  state.team=Object.keys(parsed)[0]; $("#team-select").value=state.team;
+  refreshAll();
+  toast(`마스터 반영됨 · ${Object.keys(parsed).length}개 팀`);
+});
+
+/* ============================================================
+   네비게이션 / 초기화
+   ============================================================ */
+function setView(v){
+  state.view=v;
+  document.querySelectorAll(".view").forEach(s=>s.classList.remove("active"));
+  $("#view-"+v).classList.add("active");
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("on", b.dataset.view===v));
+  $("#floatbar").classList.toggle("hidden", v!=="check");
+  if(v==="report"){ fillRepTeams(); renderReport(); }
+  if(v==="map") renderMap();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll("nav.tabs button").forEach(b=> b.addEventListener("click",()=>setView(b.dataset.view)));
+$("#btn-goto-map").addEventListener("click",()=>setView("map"));
+
+document.querySelectorAll(".chip").forEach(c=> c.addEventListener("click",()=>{
+  state.filter=c.dataset.filter;
+  document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on", x===c));
+  renderList();
+}));
+
+function fillTeamSelect(){
+  const sel=$("#team-select"); sel.innerHTML="";
+  Object.keys(state.teams).forEach(t=>{ const o=document.createElement("option"); o.value=t; o.textContent=t; sel.appendChild(o); });
+}
+$("#team-select").addEventListener("change", e=>{ state.team=e.target.value; state.pending={}; refreshAll(); });
+
+function refreshAll(){ renderHeader(); renderList(); if(state.view==="map") renderMap(); if(state.view==="report"){ renderReport(); } }
+
+function updateModeUI(){
+  const live = state.mode==="supabase";
+  $("#mode-badge").textContent = live? "LIVE" : "DEMO";
+  $("#mode-badge").className = "badge-mode "+(live?"live":"demo");
+  $("#mode-desc").textContent = live? "Supabase 연결됨 · 영구 저장" : "로컬 데모 (새로고침 시 초기화)";
+}
+
+async function startApp(){
+  $("#login").classList.add("hidden");
+  $("#app").classList.remove("hidden");
+  const now=new Date();
+  $("#hd-date").innerHTML = `${now.getFullYear()}년 ${now.getMonth()+1}월<br/>정기 점검`;
+  state.teams = await Backend.loadMaster();
+  state.inspections = await Backend.loadInspections();
+  if(state.mode==="demo" && state.inspections.length===0) seedDemo();
+  state.team = Object.keys(state.teams)[0];
+  fillTeamSelect(); $("#team-select").value=state.team;
+  // 보고서 기본 기간: 지난달~이번달
+  const prev=new Date(now.getFullYear(), now.getMonth()-1, 1);
+  $("#rep-from").value=ym(prev); $("#rep-to").value=ym(now);
+  $("#rep-from").addEventListener("change", renderReport);
+  $("#rep-to").addEventListener("change", renderReport);
+  $("#rep-team").addEventListener("change", renderReport);
+  updateModeUI();
+  refreshAll();
+  setView("check");
+}
+
+$("#btn-login").addEventListener("click", async ()=>{
+  const id=$("#in-id").value.trim(), pw=$("#in-pw").value;
+  if(!id){ toast("담당자 ID를 입력하세요"); return; }
+  try{
+    state.user = await Backend.signIn(id, pw);
+    await startApp();
+  }catch(err){ toast("로그인 실패: "+(err.message||err)); }
+});
+$("#in-pw").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#btn-login").click(); });
+$("#btn-logout").addEventListener("click",()=>{ location.reload(); });
+
+/* 부팅 */
+Backend.init().then(updateModeUI);
+</script>
+</body>
+</html>
