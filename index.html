@@ -266,7 +266,7 @@
       <input id="in-pw" type="password" placeholder="비밀번호" autocomplete="current-password" />
     </div>
     <button class="btn-primary" id="btn-login">로그인</button>
-    <div class="login-note">
+    <div class="login-note" id="login-note">
       <span class="pill-demo">데모 모드</span><br/>
       아이디·비밀번호 아무거나 입력하면 둘러볼 수 있습니다.<br/>
       실제 인증은 Supabase 연결 후 동작합니다.
@@ -375,7 +375,7 @@
             <span class="badge-mode demo" id="mode-badge">DEMO</span>
           </div>
         </div>
-        <div class="set-note">
+        <div class="set-note" id="set-note">
           현재는 <b>데모 모드</b>입니다. index.html 상단의 <b>CONFIG</b>에 Supabase 주소·키를 넣으면
           사진·점검 이력이 실제로 저장되고 팀별 로그인이 동작합니다. 자세한 방법은 함께 받은 배포 가이드를 참고하세요.
         </div>
@@ -422,16 +422,29 @@
    (비워두면 자동으로 '데모 모드'로 동작합니다)
    ============================================================ */
 const CONFIG = {
-  SUPABASE_URL: "https://arixcbzjqbzlpfnubpzi.supabase.co",          // 예: https://abcd.supabase.co
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyaXhjYnpqcWJ6bHBmbnVicHppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MDcxODksImV4cCI6MjA5ODI4MzE4OX0.iOnZ67Srf0qyVKew8ZjEsbtTISA9NCKUvXRsL-STQqo",     // 예: eyJhbGciOi...
+  SUPABASE_URL: "https://arixcbzjqbzlpfnubpzi.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyaXhjYnpqcWJ6bHBmbnVicHppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MDcxODksImV4cCI6MjA5ODI4MzE4OX0.iOnZ67Srf0qyVKew8ZjEsbtTISA9NCKUvXRsL-STQqo",
   BUCKET: "inspection-photos"
+};
+
+/* ============================================================
+   보고서 점검자 이름:  로그인 이메일  →  표시할 사람 이름
+   아래에 등록한 팀 계정 이메일과 이름을 적으면 보고서/이력에 '이름'이 보입니다.
+   (해당 이메일이 없으면 로그인 이메일이 그대로 표시됩니다)
+   ※ 본인이 Supabase Authentication > Users 에 만든 4개 계정 이메일을 적으세요.
+   ============================================================ */
+const INSPECTOR_NAMES = {
+  // "jusaje@example.com": "황의영",
+  // "wonaek@example.com": "홍길동",
+  // "boostin@example.com": "이순신",
+  // "siktang@example.com": "강감찬",
 };
 
 /* ---------- 데모용 마스터 데이터 (배포 시 data/소화기_마스터.xlsx 가 우선) ---------- */
 const DEMO_TEAMS = {
   "주사제팀":[["A-01","주사제 1라인 출입구 좌측","분말(ABC)"],["A-02","1라인 충전실 A132호 앞","분말(ABC)"],["A-03","1라인 포장실 입구","분말(ABC)"],["A-04","2라인 출입구 우측","분말(ABC)"],["A-05","2라인 세척실 앞","CO2"],["A-06","2라인 동결건조실 앞","분말(ABC)"],["A-07","무균충전실 A201호 전실","분말(ABC)"],["A-08","무균충전실 A202호 전실","분말(ABC)"],["A-09","계단실 1층 (동측)","분말(ABC)"],["A-10","계단실 2층 (동측)","분말(ABC)"],["A-11","QC 시험실 입구","분말(ABC)"],["A-12","자재 입고장 셔터 옆","분말(ABC)"],["A-13","탈의실 복도 끝","분말(ABC)"],["A-14","전기실 출입문 좌측","CO2"],["A-15","유틸리티실 보일러 앞","분말(ABC)"],["A-16","완제품 창고 A동 입구","분말(ABC)"],["A-17","완제품 창고 A동 중앙","분말(ABC)"],["A-18","사무실 출입구","분말(ABC)"],["A-19","휴게실 자판기 옆","분말(ABC)"],["A-20","옥상 출입문 앞","분말(ABC)"]],
-  "부스틴팀":[["F-01","식당 출입구","분말(ABC)"],["F-02","주방 입구 (홀측)","K급(주방)"],["F-03","주방 튀김기 구역","K급(주방)"],["F-04","주방 가스레인지 옆","K급(주방)"],["F-05","배식대 끝","분말(ABC)"],["F-06","식자재 창고 입구","분말(ABC)"],["F-07","냉동/냉장고 전실","분말(ABC)"],["F-08","계단실","분말(ABC)"]],
-  "식당동":[["B-01","배양동 1층 출입구","분말(ABC)"],["B-02","배양실 B-101 앞","분말(ABC)"],["B-03","배양실 B-102 앞","분말(ABC)"],["B-04","정제실 입구 좌측","분말(ABC)"],["B-05","정제실 크로마토그래피","CO2"],["B-06","버퍼 조제실 앞","분말(ABC)"],["B-07","배지 조제실 앞","분말(ABC)"],["B-08","원제 저장실 전실","분말(ABC)"],["B-09","계단실 1층 (서측)","분말(ABC)"],["B-10","유틸리티 펌프실","분말(ABC)"],["B-11","전기실 입구","CO2"],["B-12","자재 보관실 입구","분말(ABC)"]]
+  "원액생산팀":[["B-01","배양동 1층 출입구","분말(ABC)"],["B-02","배양실 B-101 앞","분말(ABC)"],["B-03","배양실 B-102 앞","분말(ABC)"],["B-04","정제실 입구 좌측","분말(ABC)"],["B-05","정제실 크로마토그래피","CO2"],["B-06","버퍼 조제실 앞","분말(ABC)"],["B-07","배지 조제실 앞","분말(ABC)"],["B-08","원액 저장실 전실","분말(ABC)"],["B-09","계단실 1층 (서측)","분말(ABC)"],["B-10","유틸리티 펌프실","분말(ABC)"],["B-11","전기실 입구","CO2"],["B-12","자재 보관실 입구","분말(ABC)"]],
+  "식당동":[["F-01","식당 출입구","분말(ABC)"],["F-02","주방 입구 (홀측)","K급(주방)"],["F-03","주방 튀김기 구역","K급(주방)"],["F-04","주방 가스레인지 옆","K급(주방)"],["F-05","배식대 끝","분말(ABC)"],["F-06","식자재 창고 입구","분말(ABC)"],["F-07","냉동/냉장고 전실","분말(ABC)"],["F-08","계단실","분말(ABC)"]]
 };
 
 /* ============================================================
@@ -458,14 +471,20 @@ const Backend = {
     if(state.mode==="supabase"){
       const { data, error } = await state.sb.auth.signInWithPassword({ email:id, password:pw });
       if(error) throw error;
-      return data.user.email;
+      const email = data.user.email;
+      // 보고서에 이름으로 표시: 매핑 > Supabase Display name > 이메일
+      return INSPECTOR_NAMES[email] || (data.user.user_metadata && data.user.user_metadata.display_name) || email;
     }
     return id; // 데모: 입력 ID를 점검자명으로
   },
   async loadMaster(){
-    // 1) 배포 환경: 레포의 엑셀을 직접 파싱
+    // 0) 엑셀 파서(SheetJS) 먼저 확보 — 시작 시 레포 엑셀을 파싱하려면 필요
+    if(typeof XLSX==="undefined"){
+      try{ await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"); }catch(e){ /* 오프라인 무시 */ }
+    }
+    // 1) 배포 환경: 레포의 엑셀을 직접 파싱 (?v= 로 캐시 무력화 → 수정 즉시 반영)
     try{
-      const res = await fetch("data/소화기_마스터.xlsx", {cache:"no-store"});
+      const res = await fetch("data/소화기_마스터.xlsx?v="+Date.now(), {cache:"no-store"});
       if(res.ok && typeof XLSX!=="undefined"){
         const buf = await res.arrayBuffer();
         const parsed = parseWorkbook(buf);
@@ -494,7 +513,9 @@ const Backend = {
     if(state.mode==="supabase"){
       let url=null;
       if(file){
-        const path = `${rec.team}/${rec.extId}_${Date.now()}.jpg`;
+        // Supabase Storage 키는 ASCII만 허용(한글 불가) → 관리번호+시각으로 안전한 키 생성
+        const safeId = String(rec.extId).replace(/[^\w.-]/g, "_");   // 예: A-03 → A-03
+        const path = `${safeId}_${Date.now()}.jpg`;
         const { error:upErr } = await state.sb.storage.from(CONFIG.BUCKET).upload(path, file, {upsert:true});
         if(upErr) throw upErr;
         url = state.sb.storage.from(CONFIG.BUCKET).getPublicUrl(path).data.publicUrl;
@@ -857,6 +878,18 @@ function updateModeUI(){
   $("#mode-badge").textContent = live? "LIVE" : "DEMO";
   $("#mode-badge").className = "badge-mode "+(live?"live":"demo");
   $("#mode-desc").textContent = live? "Supabase 연결됨 · 영구 저장" : "로컬 데모 (새로고침 시 초기화)";
+  const ln = $("#login-note");
+  if(ln){
+    ln.innerHTML = live
+      ? '<span class="pill-demo" style="background:#2E7D52">LIVE · Supabase 연결됨</span><br/>등록된 팀 계정(이메일·비밀번호)으로 로그인하세요.'
+      : '<span class="pill-demo">데모 모드</span><br/>아이디·비밀번호 아무거나 입력하면 둘러볼 수 있습니다.<br/>실제 인증은 Supabase 연결 후 동작합니다.';
+  }
+  const sn = $("#set-note");
+  if(sn){
+    sn.innerHTML = live
+      ? '<b>Supabase에 연결됨(LIVE)</b> 상태입니다. 점검 사진과 이력이 실제로 저장되고, 팀 계정으로 로그인합니다.'
+      : '현재는 <b>데모 모드</b>입니다. index.html 상단의 <b>CONFIG</b>에 Supabase 주소·키를 넣으면 사진·점검 이력이 실제로 저장되고 팀별 로그인이 동작합니다.';
+  }
 }
 
 async function startApp(){
@@ -884,6 +917,7 @@ $("#btn-login").addEventListener("click", async ()=>{
   const id=$("#in-id").value.trim(), pw=$("#in-pw").value;
   if(!id){ toast("담당자 ID를 입력하세요"); return; }
   try{
+    await bootReady;            // Supabase 초기화 완료 보장 (모드 확정 후 로그인)
     state.user = await Backend.signIn(id, pw);
     await startApp();
   }catch(err){ toast("로그인 실패: "+(err.message||err)); }
@@ -892,7 +926,7 @@ $("#in-pw").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#btn-login")
 $("#btn-logout").addEventListener("click",()=>{ location.reload(); });
 
 /* 부팅 */
-Backend.init().then(updateModeUI);
+const bootReady = Backend.init().then(updateModeUI);
 </script>
 </body>
 </html>
